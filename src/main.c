@@ -30,6 +30,13 @@ bool initialize_window(void) {
     fprintf(stderr, "Error initializing SDL.\n");
     return false;
   }
+
+  SDL_DisplayMode display_mode;
+  SDL_GetCurrentDisplayMode(0, &display_mode);
+
+  window_width = display_mode.w;
+  window_height = display_mode.h;
+
   // Create a SDL Window
   window = SDL_CreateWindow(
       NULL,
@@ -49,6 +56,7 @@ bool initialize_window(void) {
     fprintf(stderr, "Error creating SDL renderer.\n");
     return false;
   }
+  SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
   return true;
 }
 
@@ -95,13 +103,47 @@ void clear_color_buffer(uint32_t color) {
   }
 }
 
+void draw_grid() {
+  for (int y = 0; y < window_height; y += 1) {
+    for (int x = 0; x < window_width; x += 1) {
+      if (x % 10 == 0 || y % 10 == 0) {
+        color_buffer[(window_width * y) + x] = 0xFF333333;
+      }
+    }
+  }
+}
+
+void draw_rectangle(int mx, int my, int width, int height, uint32_t color) {
+   // inefficient
+  //  for (int y = 0; y < window_height; y += 1) {
+  //   for (int x = 0; x < window_width; x += 1) {
+  //     // find mx and my. keep drawing until width 
+  //     // then next row, find mx again keep drawing until width
+  //     // row will be limited by y 
+  //     if (y >= my && x >= mx && x <= width && y <= height) {
+  //       color_buffer[(window_width * y) + x] = color;
+  //     }
+  //   }
+  // }
+  // efficient
+  for (int y = my; y < my + height; y++) {
+    for (int x = mx; x < mx + width; x++) {
+      color_buffer[(window_width * y) + x] = color;
+    }
+  }
+}
+
 void render(void) {
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
   SDL_RenderClear(renderer);
 
-  // on every render, clear the color buffer.
-  clear_color_buffer(0xFFFFFF00);
+  draw_grid();
+
+  draw_rectangle(100, 100, 500, 500, 0xFFFF0000);
+
+  // render should come before clear
   render_color_buffer();
+  clear_color_buffer(0xFF000000);
 
   SDL_RenderPresent(renderer);
 }
